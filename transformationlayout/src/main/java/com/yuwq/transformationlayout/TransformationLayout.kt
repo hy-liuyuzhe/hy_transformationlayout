@@ -1,19 +1,23 @@
 package com.yuwq.transformationlayout
 
+import android.app.ActivityOptions
 import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.Color
 import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
+import android.transition.PathMotion
+import android.transition.Transition
+import android.transition.TransitionManager
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.ChecksSdkIntAtLeast
-import androidx.transition.PathMotion
-import androidx.transition.Transition
-import androidx.transition.TransitionManager
-import com.google.android.material.transition.MaterialArcMotion
-import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.transition.platform.MaterialArcMotion
+import com.google.android.material.transition.platform.MaterialContainerTransform
+import kotlinx.parcelize.Parcelize
 
 /**
  * @author liuyuzhe
@@ -22,10 +26,14 @@ class TransformationLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
+    private val containerColor: Int = Color.TRANSPARENT
+    private val zOrder: Int = R.id.content
     private val isHoldAtEndEnabled: Boolean = false
     private lateinit var targetView: View
     private val ELEVATION_NOT_SET: Float = -1.0F
     private val pathMotion: Motion = Motion.ARC
+    private val duration: Long = 450L
+
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
     private var elevationShadowEnabled: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
@@ -85,6 +93,7 @@ class TransformationLayout @JvmOverloads constructor(
             this.containerColor = Color.TRANSPARENT
             this.setAllContainerColors(Color.TRANSPARENT)
             this.scrimColor = Color.TRANSPARENT
+            this.drawingViewId = this@TransformationLayout.zOrder
             this.transitionDirection = MaterialContainerTransform.TRANSITION_DIRECTION_AUTO
             this.fadeMode = MaterialContainerTransform.FADE_MODE_IN
             this.fitMode = MaterialContainerTransform.FIT_MODE_AUTO
@@ -93,7 +102,7 @@ class TransformationLayout @JvmOverloads constructor(
             this.isElevationShadowEnabled = this@TransformationLayout.elevationShadowEnabled
             this.isHoldAtEndEnabled = this@TransformationLayout.isHoldAtEndEnabled
             addTarget(endView)
-            duration = 450
+            duration = this@TransformationLayout.duration
             addListener(object : SimpleTransitionListener() {
                 override fun onTransitionCancel(transition: Transition) {
                     onFinishTransformation()
@@ -109,6 +118,51 @@ class TransformationLayout @JvmOverloads constructor(
     private fun onFinishTransformation() {
 
     }
+
+    fun getParcelableParams(): Parcelable {
+        return getParams()
+    }
+
+    private fun getParams(): Parcelable {
+        return Params(
+            duration = this@TransformationLayout.duration,
+            pathMotion = this@TransformationLayout.pathMotion,
+//            zOrder = this@TransformationLayout.zOrder,
+//            containerColor = this@TransformationLayout.containerColor,
+//            containerColor = this@TransformationLayout.containerColor,
+            transitionName = transitionName
+        )
+    }
+
+    fun withView(
+        view: View,
+        transitionName: String
+    ): Bundle {
+        setTransitionName(transitionName)
+        val activity = view.context.getActivity()
+        requireNotNull(activity)
+        return ActivityOptions.makeSceneTransitionAnimation(activity, this, transitionName)
+            .toBundle()
+    }
+
+    @Parcelize
+    data class Params(
+        override var duration: Long,
+        override var pathMotion: Motion,
+//        override var zOrder: Int,
+//        override var containerColor: Int,
+//        override var allContainerColors: Int,
+//        override var scrimColor: Int,
+//        override var direction: Direction,
+//        override var fadeMode: FadeMode,
+//        override var fitMode: FitMode,
+//        override var startElevation: Float,
+//        override var endElevation: Float,
+//        override var elevationShadowEnable: Boolean,
+//        override var holdAtEndEnable: Boolean,
+        var transitionName: String
+    ) : Parcelable,TransformationParams
+
 
     internal abstract class SimpleTransitionListener : Transition.TransitionListener {
         override fun onTransitionStart(transition: Transition) {
@@ -140,5 +194,30 @@ class TransformationLayout @JvmOverloads constructor(
             if (value == 0) return MaterialArcMotion()
             return null
         }
+    }
+
+    /**
+     * The Direction to be used by this transform
+     */
+    enum class Direction(val value: Int) {
+        AUTO(MaterialContainerTransform.TRANSITION_DIRECTION_AUTO),
+        ENTER(MaterialContainerTransform.TRANSITION_DIRECTION_ENTER),
+        RETURN(MaterialContainerTransform.TRANSITION_DIRECTION_RETURN)
+    }
+
+    /**
+     * The [FadeMode] to be used to swap the content of the start View with that of the end View
+     */
+    enum class FadeMode(val value: Int) {
+        IN(MaterialContainerTransform.FADE_MODE_IN),
+        OUT(MaterialContainerTransform.FADE_MODE_OUT),
+        CROSS(MaterialContainerTransform.FADE_MODE_CROSS),
+        THROUGH(MaterialContainerTransform.FADE_MODE_THROUGH)
+    }
+
+    enum class FitMode(val value:Int) {
+        AUTO(MaterialContainerTransform.FIT_MODE_AUTO),
+        WIDTH(MaterialContainerTransform.FIT_MODE_WIDTH),
+        HEIGHT(MaterialContainerTransform.FIT_MODE_HEIGHT)
     }
 }

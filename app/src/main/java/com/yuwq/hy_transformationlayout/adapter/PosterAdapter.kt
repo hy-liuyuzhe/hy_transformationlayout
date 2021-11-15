@@ -4,7 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.yuwq.hy_transformationlayout.DetailActivity
 import com.yuwq.hy_transformationlayout.Poster
+import com.yuwq.hy_transformationlayout.XClickUtils
 import com.yuwq.hy_transformationlayout.databinding.ItemPosterBinding
 
 /**
@@ -31,7 +33,8 @@ class PosterAdapter : RecyclerView.Adapter<PosterAdapter.PosterRecyclerViewHolde
             itemPosterTitle.text = item.name
             itemPosterRunningTime.text = item.playtime
             root.setOnClickListener {
-
+                if (XClickUtils.isFastClick())return@setOnClickListener
+                DetailActivity.startActivity(root.context,itemPosterTransformationLayout,item)
             }
         }
     }
