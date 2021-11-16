@@ -11,6 +11,7 @@ import android.transition.PathMotion
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -24,19 +25,24 @@ import kotlinx.parcelize.Parcelize
  */
 class TransformationLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
-) : FrameLayout(context, attrs) {
-
-    private val containerColor: Int = Color.TRANSPARENT
-    private val zOrder: Int = R.id.content
+) : FrameLayout(context, attrs), TransformationParams {
+    private val ELEVATION_NOT_SET: Float = -1.0F
+    private val zOrder: Int = android.R.id.content
     private val isHoldAtEndEnabled: Boolean = false
     private lateinit var targetView: View
-    private val ELEVATION_NOT_SET: Float = -1.0F
-    private val pathMotion: Motion = Motion.ARC
-    private val duration: Long = 450L
-
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
     private var elevationShadowEnabled: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+
+    override var pathMotion: Motion = Motion.ARC
+    override var scrimColor: Int = Color.TRANSPARENT
+    override var direction: Direction = Direction.AUTO
+    override var fadeMode: FadeMode = FadeMode.IN
+    override var fitMode: FitMode = FitMode.AUTO
+    override var startElevation: Float = ELEVATION_NOT_SET
+    override var endElevation: Float = ELEVATION_NOT_SET
+    override var elevationShadowEnable: Boolean = false
+    override var duration: Long = 450L
 
     init {
         val typeArray = context.obtainStyledAttributes(attrs, R.styleable.TransformationLayout)
@@ -47,10 +53,26 @@ class TransformationLayout @JvmOverloads constructor(
         }
     }
 
-    private fun setTypeArray(typeArray: TypedArray) {
-        typeArray.getResourceId(R.styleable.TransformationLayout_transformation_targetView, -1)
+    private fun setTypeArray(a: TypedArray) {
+        a.getResourceId(R.styleable.TransformationLayout_transformation_targetView, -1)
             .also {
                 if (it != -1) post { bindTargetView(rootView.findViewById<View>(it)) }
+            }
+        this.duration =
+            a.getInteger(R.styleable.TransformationLayout_transformation_duration, duration.toInt())
+                .toLong()
+        this.pathMotion =
+            when (a.getInteger(R.styleable.TransformationLayout_transformation_pathMode, Motion.ARC.value)) {
+                0 -> Motion.ARC
+                else -> Motion.LINEAR
+            }
+        this.scrimColor = a.getColor(R.styleable.TransformationLayout_transformation_scrimColor,scrimColor)
+        this.fadeMode =
+            when(a.getInteger(R.styleable.TransformationLayout_transformation_fadeMode,FadeMode.IN.value)){
+                0->FadeMode.IN
+                1->FadeMode.OUT
+                2->FadeMode.CROSS
+                else ->FadeMode.THROUGH
             }
     }
 
@@ -89,19 +111,21 @@ class TransformationLayout @JvmOverloads constructor(
         return MaterialContainerTransform().apply {
             this.startView = startView
             this.endView = endView
-            this.setPathMotion(this@TransformationLayout.pathMotion.getPathMotion())
+            this.pathMotion = this@TransformationLayout.pathMotion.getPathMotion()
             this.containerColor = Color.TRANSPARENT
-            this.setAllContainerColors(Color.TRANSPARENT)
-            this.scrimColor = Color.TRANSPARENT
+            this.startContainerColor = Color.TRANSPARENT
+            this.endContainerColor = Color.TRANSPARENT
+            this.scrimColor = this@TransformationLayout.scrimColor
             this.drawingViewId = this@TransformationLayout.zOrder
-            this.transitionDirection = MaterialContainerTransform.TRANSITION_DIRECTION_AUTO
-            this.fadeMode = MaterialContainerTransform.FADE_MODE_IN
+            this.transitionDirection = this@TransformationLayout.direction.value
+            this.fadeMode = this@TransformationLayout.fadeMode.value
             this.fitMode = MaterialContainerTransform.FIT_MODE_AUTO
             this.startElevation = this@TransformationLayout.ELEVATION_NOT_SET
             this.endElevation = this@TransformationLayout.ELEVATION_NOT_SET
             this.isElevationShadowEnabled = this@TransformationLayout.elevationShadowEnabled
             this.isHoldAtEndEnabled = this@TransformationLayout.isHoldAtEndEnabled
             addTarget(endView)
+            Log.d("liuyuzhe", "createTransition: " + this@TransformationLayout.duration)
             duration = this@TransformationLayout.duration
             addListener(object : SimpleTransitionListener() {
                 override fun onTransitionCancel(transition: Transition) {
@@ -127,9 +151,13 @@ class TransformationLayout @JvmOverloads constructor(
         return Params(
             duration = this@TransformationLayout.duration,
             pathMotion = this@TransformationLayout.pathMotion,
-//            zOrder = this@TransformationLayout.zOrder,
-//            containerColor = this@TransformationLayout.containerColor,
-//            containerColor = this@TransformationLayout.containerColor,
+            scrimColor = this@TransformationLayout.scrimColor,
+            direction = this@TransformationLayout.direction,
+            fadeMode = this@TransformationLayout.fadeMode,
+            fitMode = this@TransformationLayout.fitMode,
+            startElevation = this@TransformationLayout.startElevation,
+            endElevation = this@TransformationLayout.endElevation,
+            elevationShadowEnable = this@TransformationLayout.elevationShadowEnable,
             transitionName = transitionName
         )
     }
@@ -149,19 +177,15 @@ class TransformationLayout @JvmOverloads constructor(
     data class Params(
         override var duration: Long,
         override var pathMotion: Motion,
-//        override var zOrder: Int,
-//        override var containerColor: Int,
-//        override var allContainerColors: Int,
-//        override var scrimColor: Int,
-//        override var direction: Direction,
-//        override var fadeMode: FadeMode,
-//        override var fitMode: FitMode,
-//        override var startElevation: Float,
-//        override var endElevation: Float,
-//        override var elevationShadowEnable: Boolean,
-//        override var holdAtEndEnable: Boolean,
+        override var scrimColor: Int,
+        override var direction: Direction,
+        override var fadeMode: FadeMode,
+        override var fitMode: FitMode,
+        override var startElevation: Float,
+        override var endElevation: Float,
+        override var elevationShadowEnable: Boolean,
         var transitionName: String
-    ) : Parcelable,TransformationParams
+    ) : Parcelable, TransformationParams
 
 
     internal abstract class SimpleTransitionListener : Transition.TransitionListener {
@@ -215,7 +239,7 @@ class TransformationLayout @JvmOverloads constructor(
         THROUGH(MaterialContainerTransform.FADE_MODE_THROUGH)
     }
 
-    enum class FitMode(val value:Int) {
+    enum class FitMode(val value: Int) {
         AUTO(MaterialContainerTransform.FIT_MODE_AUTO),
         WIDTH(MaterialContainerTransform.FIT_MODE_WIDTH),
         HEIGHT(MaterialContainerTransform.FIT_MODE_HEIGHT)

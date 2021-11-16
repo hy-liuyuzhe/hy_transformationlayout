@@ -10,26 +10,38 @@ import java.io.Serializable
 internal interface TransformationParams : Serializable {
     var duration: Long
     var pathMotion: TransformationLayout.Motion
-//    var zOrder: Int
-//    var containerColor: Int
-//    var allContainerColors: Int
-//    var scrimColor: Int
-//    var direction: TransformationLayout.Direction
-//    var fadeMode: TransformationLayout.FadeMode
-//    var fitMode: TransformationLayout.FitMode
-//    var startElevation: Float
-//    var endElevation: Float
-//    var elevationShadowEnable: Boolean
-//    var holdAtEndEnable: Boolean
+    var scrimColor: Int
+    var direction: TransformationLayout.Direction
+    var fadeMode: TransformationLayout.FadeMode
+    var fitMode: TransformationLayout.FitMode
+    var startElevation: Float
+    var endElevation: Float
+    var elevationShadowEnable: Boolean
 }
 
-//internal object DefaultParamValues : TransformationParams {
-//    override var duration: Long = 450L
-//    override var pathMotion: TransformationLayout.Motion = TransformationLayout.Motion.ARC
-//
-//
-//
-//}
+internal object DefaultParamValues : TransformationParams {
+    override var duration: Long = 450L
+    override var pathMotion: TransformationLayout.Motion = TransformationLayout.Motion.ARC
+    override var scrimColor: Int = Color.TRANSPARENT
+    override var direction: TransformationLayout.Direction
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var fadeMode: TransformationLayout.FadeMode
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var fitMode: TransformationLayout.FitMode
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var startElevation: Float
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var endElevation: Float
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var elevationShadowEnable: Boolean
+        get() = TODO("Not yet implemented")
+        set(value) {}
+}
 
 internal fun TransformationParams.getMaterialContainerTransform(): MaterialContainerTransform {
     val params = this
@@ -37,11 +49,11 @@ internal fun TransformationParams.getMaterialContainerTransform(): MaterialConta
         addTarget(android.R.id.content)
         duration = params.duration
         pathMotion = params.pathMotion.getPathMotion()
-        setAllContainerColors(Color.TRANSPARENT)
-        scrimColor = Color.TRANSPARENT
-        drawingViewId = android.R.id.content
-        this.transitionDirection = MaterialContainerTransform.TRANSITION_DIRECTION_AUTO
-        this.fadeMode = MaterialContainerTransform.FADE_MODE_IN
-        this.fitMode = MaterialContainerTransform.FIT_MODE_AUTO
+        scrimColor = params.scrimColor
+        transitionDirection = params.direction.value
+        fadeMode = params.fadeMode.value
+        fitMode = params.fitMode.value
+        startElevation = params.startElevation
+        endElevation = params.endElevation
     }
 }

@@ -19,6 +19,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="30dp"
+        app:transformation_duration="300"
+        app:transformation_pathMode="arc"
+        app:transformation_fadeMode="cross"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:transformation_targetView="@id/menu_card">
