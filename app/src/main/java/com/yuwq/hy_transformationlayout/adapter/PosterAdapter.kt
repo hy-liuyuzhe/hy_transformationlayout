@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.yuwq.hy_transformationlayout.DetailActivity
 import com.yuwq.hy_transformationlayout.Poster
-import com.yuwq.hy_transformationlayout.XClickUtils
+import com.yuwq.transformationlayout.XClickUtils
 import com.yuwq.hy_transformationlayout.databinding.ItemPosterBinding
 
 /**

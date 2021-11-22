@@ -1,6 +1,4 @@
-package com.yuwq.hy_transformationlayout
-
-import com.yuwq.hy_transformationlayout.XClickUtils
+package com.yuwq.transformationlayout
 
 /**
  * 防止快速点击

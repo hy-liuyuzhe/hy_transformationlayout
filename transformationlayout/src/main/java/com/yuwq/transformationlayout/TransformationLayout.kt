@@ -26,13 +26,16 @@ import kotlinx.parcelize.Parcelize
 class TransformationLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs), TransformationParams {
-    private val ELEVATION_NOT_SET: Float = -1.0F
+    private lateinit var targetView: View
+    private var onTransformFinishListener: OnTransformFinishListener? = null
+    private var isTransformed: Boolean = false
+    private var isTransforming: Boolean = false
+
     private val zOrder: Int = android.R.id.content
     private val isHoldAtEndEnabled: Boolean = false
-    private lateinit var targetView: View
-
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
     private var elevationShadowEnabled: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+    private val ELEVATION_NOT_SET: Float = -1.0F
 
     override var pathMotion: Motion = Motion.ARC
     override var scrimColor: Int = Color.TRANSPARENT
@@ -62,17 +65,24 @@ class TransformationLayout @JvmOverloads constructor(
             a.getInteger(R.styleable.TransformationLayout_transformation_duration, duration.toInt())
                 .toLong()
         this.pathMotion =
-            when (a.getInteger(R.styleable.TransformationLayout_transformation_pathMode, Motion.ARC.value)) {
+            when (a.getInteger(
+                R.styleable.TransformationLayout_transformation_pathMode,
+                Motion.ARC.value
+            )) {
                 0 -> Motion.ARC
                 else -> Motion.LINEAR
             }
-        this.scrimColor = a.getColor(R.styleable.TransformationLayout_transformation_scrimColor,scrimColor)
+        this.scrimColor =
+            a.getColor(R.styleable.TransformationLayout_transformation_scrimColor, scrimColor)
         this.fadeMode =
-            when(a.getInteger(R.styleable.TransformationLayout_transformation_fadeMode,FadeMode.IN.value)){
-                0->FadeMode.IN
-                1->FadeMode.OUT
-                2->FadeMode.CROSS
-                else ->FadeMode.THROUGH
+            when (a.getInteger(
+                R.styleable.TransformationLayout_transformation_fadeMode,
+                FadeMode.IN.value
+            )) {
+                0 -> FadeMode.IN
+                1 -> FadeMode.OUT
+                2 -> FadeMode.CROSS
+                else -> FadeMode.THROUGH
             }
     }
 
@@ -90,20 +100,36 @@ class TransformationLayout @JvmOverloads constructor(
 
     fun startTransform(container: ViewGroup) {
         container.post {
-
-            beginDelayingAndTransform(container, this, targetView)
+            if (!isTransformed && !isTransforming && !XClickUtils.isFastClick(container.id,interval = duration)) {
+                beginDelayingAndTransform(container, this, targetView)
+            }
         }
     }
 
     fun finishTransform(container: ViewGroup) {
         container.post {
-            beginDelayingAndTransform(container, targetView, this)
+            if (isTransformed && !isTransforming && !XClickUtils.isFastClick(container.id,interval = duration)) {
+                beginDelayingAndTransform(container, targetView, this)
+            }
         }
+    }
+
+    fun setOnTransformFinishListener(action: (Boolean) -> Unit) {
+        setOnTransformFinishListener(object : OnTransformFinishListener {
+            override fun onTransformFinish(isTransformed: Boolean) {
+                action(isTransformed)
+            }
+        })
+    }
+
+    fun setOnTransformFinishListener(onTransformFinishListener: OnTransformFinishListener) {
+        this.onTransformFinishListener = onTransformFinishListener
     }
 
     private fun beginDelayingAndTransform(container: ViewGroup, startView: View, endView: View) {
         startView.visible(false)
         endView.visible(true)
+        isTransforming = true
         TransitionManager.beginDelayedTransition(container, createTransition(startView, endView))
     }
 
@@ -124,9 +150,8 @@ class TransformationLayout @JvmOverloads constructor(
             this.endElevation = this@TransformationLayout.ELEVATION_NOT_SET
             this.isElevationShadowEnabled = this@TransformationLayout.elevationShadowEnabled
             this.isHoldAtEndEnabled = this@TransformationLayout.isHoldAtEndEnabled
-            addTarget(endView)
-            Log.d("liuyuzhe", "createTransition: " + this@TransformationLayout.duration)
             duration = this@TransformationLayout.duration
+            addTarget(endView)
             addListener(object : SimpleTransitionListener() {
                 override fun onTransitionCancel(transition: Transition) {
                     onFinishTransformation()
@@ -134,13 +159,15 @@ class TransformationLayout @JvmOverloads constructor(
 
                 override fun onTransitionEnd(transition: Transition) {
                     onFinishTransformation()
+                    onTransformFinishListener?.onTransformFinish(isTransformed)
                 }
             })
         }
     }
 
     private fun onFinishTransformation() {
-
+        isTransformed = !isTransformed
+        isTransforming = false
     }
 
     fun getParcelableParams(): Parcelable {
