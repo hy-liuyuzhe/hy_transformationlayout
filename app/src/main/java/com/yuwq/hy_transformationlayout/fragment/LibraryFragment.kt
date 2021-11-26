@@ -13,6 +13,13 @@ import com.yuwq.hy_transformationlayout.databinding.FragmentLibraryBinding
 
 class LibraryFragment : Fragment() {
 
+    companion object {
+        fun newInstance(): Fragment {
+            val args = Bundle()
+            return LibraryFragment()
+        }
+    }
+
     lateinit var binding: FragmentLibraryBinding
 
     override fun onCreateView(

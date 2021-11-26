@@ -43,6 +43,4 @@ dependencies {
     implementation project(":transformationlayout")
     implementation "com.github.bumptech.glide:glide:$versions.glideVersion"
     annotationProcessor "com.github.bumptech.glide:compiler:$versions.glideVersion"
-    implementation "com.github.skydoves:transformationlayout:1.1.1"
-
 }

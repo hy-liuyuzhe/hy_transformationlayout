@@ -11,7 +11,6 @@ import android.transition.PathMotion
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -26,11 +25,15 @@ import kotlinx.parcelize.Parcelize
 class TransformationLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs), TransformationParams {
+    private val TAG = "TransformationLayout"
+
     private lateinit var targetView: View
+    private val isDrawDebugEnabled: Boolean = false
     private var onTransformFinishListener: OnTransformFinishListener? = null
     private var isTransformed: Boolean = false
     private var isTransforming: Boolean = false
 
+    /*设置转换view的边界*/
     private val zOrder: Int = android.R.id.content
     private val isHoldAtEndEnabled: Boolean = false
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
@@ -38,6 +41,7 @@ class TransformationLayout @JvmOverloads constructor(
     private val ELEVATION_NOT_SET: Float = -1.0F
 
     override var pathMotion: Motion = Motion.ARC
+    /*遮罩的背景色*/
     override var scrimColor: Int = Color.TRANSPARENT
     override var direction: Direction = Direction.AUTO
     override var fadeMode: FadeMode = FadeMode.IN
@@ -106,6 +110,7 @@ class TransformationLayout @JvmOverloads constructor(
         }
     }
 
+    /*通过切换开始与结束View来反向执行动画*/
     fun finishTransform(container: ViewGroup) {
         container.post {
             if (isTransformed && !isTransforming && !XClickUtils.isFastClick(container.id,interval = duration)) {
@@ -145,12 +150,13 @@ class TransformationLayout @JvmOverloads constructor(
             this.drawingViewId = this@TransformationLayout.zOrder
             this.transitionDirection = this@TransformationLayout.direction.value
             this.fadeMode = this@TransformationLayout.fadeMode.value
-            this.fitMode = MaterialContainerTransform.FIT_MODE_AUTO
+            this.fitMode = this@TransformationLayout.fitMode.value
             this.startElevation = this@TransformationLayout.ELEVATION_NOT_SET
             this.endElevation = this@TransformationLayout.ELEVATION_NOT_SET
             this.isElevationShadowEnabled = this@TransformationLayout.elevationShadowEnabled
             this.isHoldAtEndEnabled = this@TransformationLayout.isHoldAtEndEnabled
-            duration = this@TransformationLayout.duration
+            this.duration = this@TransformationLayout.duration
+            this.isDrawDebugEnabled = this@TransformationLayout.isDrawDebugEnabled
             addTarget(endView)
             addListener(object : SimpleTransitionListener() {
                 override fun onTransitionCancel(transition: Transition) {
